@@ -4,8 +4,8 @@ on:
   pull_request:
     branches: [ master ]
     types: [opened, synchronize, reopened, review_requested, review_request_removed]
-  pull_request_review:
-    types: [submitted]
+  pull_request_review_comment:
+    types: [created, edited]
   push:
     branches: [ master ]
 
@@ -53,11 +53,11 @@ jobs:
     # if review comment includes approved or LGTM, run the tests
     build:
         name: Build
-        needs: [golangci-lint, codecov]
+        needs: [golangci-lint]
         if: |
-          (github.event_name == 'pull_request_review' && (
-            (contains(github.event.review.body, 'LGTM')) ||
-            (contains(github.event.review.body, 'approved'))
+          (github.event_name == 'pull_request_review_comment' && (
+            (contains(github.event.comment.body, 'LGTM')) ||
+            (contains(github.event.comment.body, 'approved'))
           ))
         runs-on: ubuntu-22.04
         steps:
