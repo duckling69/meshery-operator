@@ -4,11 +4,10 @@ on:
   pull_request:
     branches: [ master ]
     types: [opened, synchronize, reopened, review_requested, review_request_removed]
-  issue_comment:
-    types: [created]
+  pull_request_review:
+    types: [submitted]
   push:
     branches: [ master ]
-
 
 jobs:
     golangci-lint:
@@ -56,9 +55,9 @@ jobs:
         name: Build
         needs: [golangci-lint, codecov]
         if: |
-          (github.event_name == 'issue_comment' && github.event.issue.pull_request && (
-            (contains(github.event.comment.body, 'LGTM')) ||
-            (contains(github.event.comment.body, 'approved'))
+          (github.event_name == 'pull_request_review' && (
+            (contains(github.event.review.body, 'LGTM')) ||
+            (contains(github.event.review.body, 'approved'))
           ))
         runs-on: ubuntu-22.04
         steps:
