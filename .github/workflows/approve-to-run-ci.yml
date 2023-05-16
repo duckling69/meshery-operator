@@ -66,4 +66,4 @@ jobs:
             with:
               go-version: 1.19.x
           - name: Build
-            run: make build
+            run: make build 
