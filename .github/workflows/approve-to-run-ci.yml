@@ -50,12 +50,12 @@ jobs:
 
   build:
     name: Build
-    if: >
+    if: |
       github.event_name == 'pull_request' &&
-      (contains(github.event.pull_request.body, 'LGTM') || contains(github.event.pull_request.body, 'approved'))
+      steps.fetch-comments.outputs.has-lgtm-or-approved == 'true'
+    needs: fetch-comments
     runs-on: ubuntu-22.04
     steps:
-        
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Set up Go
@@ -64,3 +64,27 @@ jobs:
           go-version: 1.19.x
       - name: Build
         run: make build
+
+  fetch-comments:
+    name: Fetch Pull Request Comments
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-22.04
+    outputs:
+      has-lgtm-or-approved: ${{ steps.check-comments.outputs.has-lgtm-or-approved }}
+    steps:
+      - name: Get pull request number
+        id: pr_number
+        run: echo "::set-output name=number::${{ github.event.pull_request.number }}"
+      - name: Fetch comments
+        id: check-comments
+        run: |
+          PR_NUMBER=${{ needs.pr_number.outputs.number }}
+          COMMENTS=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
+            | jq -r '.[] | select(.created_at > ${{ github.event.pull_request.created_at }}) | .body')
+          if echo "$COMMENTS" | grep -iqE '(LGTM|approved)'; then
+            echo "::set-output name=has-lgtm-or-approved::true"
+          else
+            echo "::set-output name=has-lgtm-or-approved::false"
+          fi
+
