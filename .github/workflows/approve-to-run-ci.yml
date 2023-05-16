@@ -52,7 +52,7 @@ jobs:
     name: Build
     if: |
       github.event_name == 'pull_request' &&
-      steps.fetch-comments.outputs.has-lgtm-or-approved == 'true'
+      needs.fetch-comments.outputs.has-lgtm-or-approved == 'true'
     needs: fetch-comments
     runs-on: ubuntu-22.04
     steps:
@@ -87,4 +87,5 @@ jobs:
           else
             echo "::set-output name=has-lgtm-or-approved::false"
           fi
+
 
