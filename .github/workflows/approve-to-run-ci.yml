@@ -3,6 +3,7 @@ name: Meshery-Operator CI
 on:
   pull_request:
     branches: [ master ]
+    types: [opened, reopened, synchronize]
   push:
     branches: [ master ]
   issue_comment:
@@ -51,23 +52,21 @@ jobs:
           flags: unittests
 
   build:
-    name: Build
-    if: github.event_name == 'issue_comment' && github.event.issue.pull_request && (contains(github.event.comment.body, 'approved') || contains(github.event.comment.body, 'LGTM'))
+    name: Build on LGTM
     runs-on: ubuntu-22.04
     steps:
-      - name: Get PR branch
-        uses: xt0rted/pull-request-comment-branch@v1
-        id: comment-branch
-
       - name: Checkout code
-        uses: actions/checkout@master
-        with:
-          ref: ${{ steps.comment-branch.outputs.head_ref }}
-
+        uses: actions/checkout@v2
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v2
         with:
           go-version: 1.19.x
-
       - name: Build
         run: make build
+      - name: LGTM Approve
+        if: ${{ github.event.issue.pull_request }}
+        uses: jonyhy96/lgtm-action@v1.1.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          times: 1
+          lgtm: 'lgtm'
