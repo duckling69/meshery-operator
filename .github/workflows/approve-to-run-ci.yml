@@ -28,7 +28,6 @@ jobs:
         # golandci-lint need to be run before codecov and succeed
         needs: golangci-lint
         name: Code Coverage
-        if: github.repository == 'meshery/meshery-operator'
         runs-on: ubuntu-22.04
         steps:
           - name: Checkout code
@@ -40,7 +39,6 @@ jobs:
           - name: Run unit tests
             run: go test --short ./... -race -coverprofile=coverage.txt -covermode=atomic
           - name: Upload coverage to Codecov
-            if: github.repository == 'meshery/meshery-operator'
             uses: codecov/codecov-action@v3
             with:
               files: ./coverage.txt
