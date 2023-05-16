@@ -2,9 +2,11 @@ name: Meshery-Operator CI
 
 on:
   pull_request:
-    branches: [master]
+    branches: [ master ]
   push:
-    branches: [master]
+    branches: [ master ]
+  issue_comment:
+    types: [created]
 
 jobs:
   golangci-lint:
@@ -50,42 +52,22 @@ jobs:
 
   build:
     name: Build
-    if: |
-      github.event_name == 'pull_request' &&
-      needs.fetch-comments.outputs.has-lgtm-or-approved == 'true'
-    needs: fetch-comments
+    if: github.event_name == 'issue_comment' && github.event.issue.pull_request && (contains(github.event.comment.body, 'approved') || contains(github.event.comment.body, 'LGTM'))
     runs-on: ubuntu-22.04
     steps:
+      - name: Get PR branch
+        uses: xt0rted/pull-request-comment-branch@v1
+        id: comment-branch
+
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@master
+        with:
+          ref: ${{ steps.comment-branch.outputs.head_ref }}
+
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: 1.19.x
+
       - name: Build
         run: make build
-
-  fetch-comments:
-    name: Fetch Pull Request Comments
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-22.04
-    outputs:
-      has-lgtm-or-approved: ${{ steps.check-comments.outputs.has-lgtm-or-approved }}
-    steps:
-      - name: Get pull request number
-        id: pr_number
-        run: echo "::set-output name=number::${{ github.event.pull_request.number }}"
-      - name: Fetch comments
-        id: check-comments
-        run: |
-          PR_NUMBER=${{ needs.pr_number.outputs.number }}
-          COMMENTS=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
-            | jq -r '.[] | select(.created_at > ${{ github.event.pull_request.created_at }}) | .body')
-          if echo "$COMMENTS" | grep -iqE '(LGTM|approved)'; then
-            echo "::set-output name=has-lgtm-or-approved::true"
-          else
-            echo "::set-output name=has-lgtm-or-approved::false"
-          fi
-
-
