@@ -2,6 +2,7 @@ name: Newcomers Alert
 on:
   issues:
     types: [labeled]
+
 jobs:
   good-first-issue-notify:
     if: github.event.label.name == 'good first issue' || github.event.label.name == 'first-timers-only' 
